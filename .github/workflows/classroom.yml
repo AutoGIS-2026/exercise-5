@@ -4,8 +4,10 @@ name: Compute a preliminary grade from currently submitted assignment
 
 on:
   pull_request_target:
-    paths: 
+    paths:
       - '*.ipynb'
+      - 'data/**'
+      - 'docs/**'
     types: [synchronize, reopened]
   workflow_dispatch:
 
@@ -13,22 +15,29 @@ jobs:
   grade-assignment:
     name: Compute a preliminary grade
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     container: python:3.13.2
     steps:
       - name: Checkout head
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           path: head
 
       - name: Checkout base
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: base
 
       - name: Copy tests from base
         run: |
+          rm -rf head/.tests
           cp -Rfv base/.tests/ head/
+
       - name: Install required Python packages
         run: pip install -r base/.tests/requirements.txt
 
@@ -38,12 +47,17 @@ jobs:
           STUDENT_USERNAME: ${{ github.event.pull_request.head.user.login }}
         run: |
           cd head
-          python .tests/grade-assignment.py >> $GITHUB_OUTPUT
+          # keep only the feedback line, in case a notebook writes to stdout directly
+          python .tests/grade-assignment.py > ../feedback.txt
+          grep '^FEEDBACK=' ../feedback.txt >> $GITHUB_OUTPUT
+          grep '^FEEDBACK=' ../feedback.txt | cut -d= -f2- | python -c "import json,sys; print(json.load(sys.stdin)['body'])" >> $GITHUB_STEP_SUMMARY
+
       - name: Add a comment to the pull request
-        uses: Automating-GIS-processes-II-2025/create-or-update-comment@v4
+        if: github.event_name == 'pull_request_target'
+        # AutoGIS-2026’s fork of peter-evans/create-or-update-comment (≈ v5), pinned to a commit
+        uses: AutoGIS-2026/create-or-update-comment@05487f1c257992f859eafab54c9b2e901245441c
         env: ${{ fromJSON(steps.grading.outputs.FEEDBACK) }}
         with:
-          
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ env.body }}
           reactions: ${{ env.reaction }}

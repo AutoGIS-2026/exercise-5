@@ -31,8 +31,22 @@ Let your creativity run free, and show us what you’ve learnt!
 Whenever you push and submit your work, an automated process will check your
 submission and tell you how many points you have achieved, so far.
 
-This week the feedback will simply test if you have created the maps and the more
-detailed feedback will be provided by the course teachers. 
+This week, the automated feedback does not award points: it runs a few basic
+checks (for instance, whether your maps are saved in the `docs` folder, and whether
+they contain data) and lists anything that needs your attention. Your maps are
+graded manually by the course teachers, who also provide more detailed feedback.
+
+#### Working with large data sets
+
+Some data sets (for instance, the full travel time matrix) are too large to be
+pushed to GitHub (the limit is 100 MB per file), and can make your notebook slow:
+
+- Only load the columns and rows you need (e.g., `usecols=` in `pandas.read_csv()`,
+  `columns=` or `bbox=` in `geopandas.read_file()`), and filter the data early.
+- Save intermediate results in a compact format (e.g., GeoPackage or Parquet) to the
+  `data` folder, and only commit files that are reasonably small.
+- If you use a large data set, don’t commit it: instead, describe in your notebook
+  where to download it, and commit only a small sample (if needed).
 
 You can find this feedback in the [‘Pull Request’](../pull/1) that has been
 automatically opened when you [accepted the GitHub classroom 

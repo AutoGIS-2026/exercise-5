@@ -8,16 +8,28 @@ import inspect
 
 
 def points(points=0, error_message="", bonus_task=False):
+    """
+    Award `points` if the decorated test passes, otherwise show `error_message`.
+
+    Tests with `points=0` that are not bonus tasks are reported as a checklist
+    (used for exercises that are graded manually, e.g. exercise 5).
+    """
 
     def _points(function):
 
         def wrapper(*args, **kwargs):
-            print(f"Recording points: {points}, error_message: {error_message}, bonus_task: {bonus_task}")
             record_property = kwargs.pop("record_property")
             record_property("points", points)
             record_property("error_message", error_message)
             record_property("bonus_task", bool(bonus_task))
             return function(*args, **kwargs)
+
+        # also available before the test runs, e.g., if a fixture fails
+        wrapper.points_info = {
+            "points": points,
+            "error_message": error_message,
+            "bonus_task": bool(bonus_task),
+        }
 
         # add `record_property` to `wrapper`’s signature in a way
         # that makes pytest replace it with its built-in fixture
